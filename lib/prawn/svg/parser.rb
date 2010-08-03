@@ -123,6 +123,9 @@ class Prawn::Svg::Parser
         element.add_call "rectangle", *args
       end
   
+    when 'flowRoot'
+      parse_flowRoot(element)
+      
     when 'path'
       parse_path(element)
       
@@ -144,8 +147,23 @@ class Prawn::Svg::Parser
     element.append_calls_to_parent unless do_not_append_calls
   end
 
+  def parse_flowRoot(element)
+    # now editing...
+  end
   
   def parse_path(element)
+    
+    # added for Inkscape data
+    if element.attributes['sodipodi:type'] == "arc" then
+      element.add_call "ellipse_at", 
+        [
+          x(element.attributes['sodipodi:cx'] || "0"), 
+          y(element.attributes['sodipodi:cy'] || "0")
+        ], 
+        distance(element.attributes['sodipodi:rx']), 
+        distance(element.attributes['sodipodi:ry'])
+    end
+    
     @svg_path ||= Path.new
 
     begin
