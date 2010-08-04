@@ -148,12 +148,62 @@ class Prawn::Svg::Parser
   end
 
   def parse_flowRoot(element)
-    # now editing...
+    
+    text = ""
+    opts = {}
+    
+    element.element.each do |child|
+      
+      if child.name == 'flowRegion' then
+        
+        child.elements.each do |child2|
+          if child2.name == "rect" then
+            attrs = child2.attributes
+            opts = {
+              :at =>[x(attrs['x']), y(attrs['y'])], 
+              :width => distance(attrs['width']), 
+              :height => distance(attrs['height'])
+            }
+          end
+        end
+        
+      elsif child.name == 'flowPara' then
+        text = child.text
+      end
+    end
+    
+    attrs = element.attributes
+    
+    if font_family = attrs["font-family"]
+      if font_family != "" && pdf_font = Prawn::Svg::Font.map_font_family_to_pdf_font(font_family)
+        element.add_call 'font', pdf_font
+      else
+        @document.warnings << "#{font_family} is not a known font."
+      end
+    end
+    
+    if size = attrs['font-size']
+      opts[:size] = size.to_f * @document.scale
+    end
+    
+    if anchor = attrs['text-anchor']
+      opts[:text_anchor] = anchor        
+    end
+    
+    case attrs['text-align']
+      when "center"
+        opts[:align] = :center
+      when "right"
+        opts[:align] = :right
+    end
+    
+    element.add_call 'text_box', text, opts
+    
   end
   
   def parse_path(element)
     
-    # added for Inkscape data
+    # draw ellipse in Inkscape data
     if element.attributes['sodipodi:type'] == "arc" then
       element.add_call "ellipse_at", 
         [
